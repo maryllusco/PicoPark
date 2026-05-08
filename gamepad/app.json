@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Pico Park Gamepad",
+    "slug": "pico-park-gamepad",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "android": {
+      "softwareKeyboardLayoutMode": "pan"
+    }
+  }
+}

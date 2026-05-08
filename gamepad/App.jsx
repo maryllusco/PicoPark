@@ -1,7 +1,5 @@
 import { useState } from 'react';
-
 import useGamepadSocket from './hooks/useGamepadSocket';
-
 import { ConnectScreen } from './screens/ConnectScreen';
 import { GamepadScreen } from './screens/GamepadScreen';
 
@@ -12,25 +10,28 @@ export default function App() {
     conectar,
     enviarInput,
     estadoConexion,
-    idJugador,
+    infoJugador,   // ← antes idJugador
+    mensajeError,  // ← nuevo
   } = useGamepadSocket(ipServidor);
 
   function manejarConexion(ip) {
     setIpServidor(ip);
-        setTimeout(() => {
-      conectar();
-    }, 100);
+    setTimeout(() => conectar(), 100);
   }
 
-  if (estadoConexion !== 'conectado') {
+  if (estadoConexion !== 'conectado' || !infoJugador) {
     return (
-      <ConnectScreen onConnect={manejarConexion} />
+      <ConnectScreen
+        onConnect={manejarConexion}
+        estadoConexion={estadoConexion}
+        mensajeError={mensajeError}
+      />
     );
   }
 
   return (
     <GamepadScreen
-      idJugador={idJugador}
+      infoJugador={infoJugador}  // ← antes idJugador={idJugador}
       enviarInput={enviarInput}
     />
   );
