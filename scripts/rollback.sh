@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 ENV=$1
 PORT=$2
+WS_PORT=$3
 CONTAINER_NAME="picopark-${ENV}"
 BACKUP_IMAGE="picopark:${ENV}-backup"
 
@@ -15,6 +16,7 @@ if docker image inspect "$BACKUP_IMAGE" > /dev/null 2>&1; then
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -p "${PORT}:80" \
+    -p "${WS_PORT}:3000" \
     "$BACKUP_IMAGE"
   echo "✅ Rollback completado en [$ENV]."
 else

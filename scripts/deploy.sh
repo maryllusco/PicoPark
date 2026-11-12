@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-ENV=$1      # 'staging' o 'production'
-PORT=$2     # 3001 para staging, 3002 para production
+ENV=$1        # 'staging' o 'production'
+PORT=$2       # 3001 para staging, 3002 para production
+WS_PORT=$3    # 3003 para staging, 3000 para production
 IMAGE_TAG="picopark:latest"
 CONTAINER_NAME="picopark-${ENV}"
 BACKUP_IMAGE="picopark:${ENV}-backup"
 
-echo "=== Iniciando despliegue de PicoPark en [$ENV] (Puerto $PORT) ==="
+echo "=== Iniciando despliegue de PicoPark en [$ENV] (Web: $PORT | WS: $WS_PORT) ==="
 
-# 1. Backup rápido de la versión actual para permitir rollback
 if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
   echo "[+] Guardando imagen de respaldo ($BACKUP_IMAGE)..."
   docker commit "$CONTAINER_NAME" "$BACKUP_IMAGE" > /dev/null || true
@@ -18,12 +18,12 @@ if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
   docker rm "$CONTAINER_NAME" || true
 fi
 
-# 2. Levantar el nuevo contenedor (mapea puerto externo -> puerto 80 de Nginx)
 echo "[+] Levantando nuevo contenedor $CONTAINER_NAME..."
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
   -p "${PORT}:80" \
+  -p "${WS_PORT}:3000" \
   "$IMAGE_TAG"
 
 echo "✅ Despliegue en [$ENV] completado."
