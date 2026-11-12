@@ -1,0 +1,65 @@
+name: CI/CD Pipeline - PicoPark
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-test-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: 1. Checkout del código
+        uses: actions/checkout@v4
+
+      - name: 2. CI - Build y empaquetado de imagen Docker
+        run: |
+          echo "=== Construyendo imagen Docker (tsc + vite build) ==="
+          docker build -t picopark:latest .
+
+      - name: 3. Despliegue a entorno Staging
+        run: |
+          ./scripts/deploy.sh staging 3001
+
+      - name: 4. Tests de validación en Staging
+        id: test_staging
+        run: |
+          echo "=== Validando Staging en puerto 3001 ==="
+          sleep 3
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:3001/ || true)
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "❌ Error en Staging: código HTTP $HTTP_STATUS"
+            exit 1
+          fi
+          echo "✅ Staging validado correctamente (HTTP 200)."
+
+      - name: 5a. Rollback en Staging si fallan los tests
+        if: failure() && steps.test_staging.outcome == 'failure'
+        run: |
+          ./scripts/rollback.sh staging 3001
+
+      - name: 6. Promoción a Producción (solo si Staging pasó)
+        run: |
+          echo "=== Promocionando a Producción en puerto 3002 ==="
+          ./scripts/deploy.sh production 3002
+
+      - name: 7. Verificación de salud en Producción
+        id: test_prod
+        run: |
+          sleep 3
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:3002/ || true)
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "❌ Error en Producción: código HTTP $HTTP_STATUS"
+            exit 1
+          fi
+          echo "✅ Producción funcionando correctamente (HTTP 200)."
+
+      - name: 5b. Rollback en Producción si falla el despliegue o la verificación
+        if: failure() && steps.test_staging.outcome == 'success'
+        run: |
+          ./scripts/rollback.sh production 3002
+
+      - name: 8. Limpieza de entornos previos
+        if: always()
+        run: |
+          ./scripts/cleanup.sh
