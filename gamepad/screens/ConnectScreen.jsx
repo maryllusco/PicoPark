@@ -2,48 +2,52 @@ import { useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
 
 export function ConnectScreen({ onConnect, estadoConexion, mensajeError }) {
-  const [ip, setIp] = useState('');
+  const [ip, setIp] = useState('10.56.31.42');
 
   const conectando = estadoConexion === 'conectando';
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>Conectar Gamepad</Text>
 
         <TextInput
           value={ip}
           onChangeText={setIp}
-          placeholder='192.168.0.15'
-          placeholderTextColor='#666'
+          placeholder="10.56.31.42"
+          placeholderTextColor="#666"
           style={styles.input}
-          autoCapitalize='none'
+          keyboardType="numeric"
+          disableFullscreenUI={true}
+          autoCapitalize="none"
           autoCorrect={false}
           editable={!conectando}
         />
 
-        {/* Mensaje de error: sala llena, timeout, etc. */}
         {mensajeError ? (
           <Text style={styles.error}>{mensajeError}</Text>
         ) : null}
 
         <Pressable
           style={[styles.button, conectando && styles.buttonDeshabilitado]}
-          onPress={() => onConnect(ip)}
+          onPress={() => onConnect(ip.trim())}
           disabled={conectando}
         >
           <Text style={styles.buttonText}>
             {conectando ? 'Conectando...' : 'Conectar'}
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -52,9 +56,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
-    justifyContent: 'center',
   },
   content: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: 24,
     gap: 16,
   },
