@@ -5,21 +5,21 @@ WS_PORT=$3
 CONTAINER_NAME="picopark-${ENV}"
 BACKUP_IMAGE="picopark:${ENV}-backup"
 
-echo "⚠️ [FALLO DETECTADO] Ejecutando rollback automático en [$ENV]..."
-
 docker stop "$CONTAINER_NAME" || true
 docker rm -f "$CONTAINER_NAME" || true
 
 if docker image inspect "$BACKUP_IMAGE" > /dev/null 2>&1; then
-  echo "[+] Restaurando versión estable desde $BACKUP_IMAGE..."
   docker run -d \
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
+    --log-driver json-file \
+    --log-opt max-size=10m \
+    --log-opt max-file=3 \
     -p "${PORT}:80" \
     -p "${WS_PORT}:3000" \
     "$BACKUP_IMAGE"
   echo "✅ Rollback completado en [$ENV]."
 else
-  echo "❌ No existe imagen de respaldo previa ($BACKUP_IMAGE)."
+  echo "❌ No existe imagen de respaldo previa."
   exit 1
 fi

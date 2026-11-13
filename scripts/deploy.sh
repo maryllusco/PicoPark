@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-ENV=$1        # 'staging' o 'production'
-PORT=$2       # 3001 para staging, 3002 para production
-WS_PORT=$3    # 3003 para staging, 3000 para production
+ENV=$1
+PORT=$2
+WS_PORT=$3
 IMAGE_TAG="picopark:latest"
 CONTAINER_NAME="picopark-${ENV}"
 BACKUP_IMAGE="picopark:${ENV}-backup"
@@ -11,19 +11,19 @@ BACKUP_IMAGE="picopark:${ENV}-backup"
 echo "=== Iniciando despliegue de PicoPark en [$ENV] (Web: $PORT | WS: $WS_PORT) ==="
 
 if docker ps -a --format '{{.Names}}' | grep -Eq "^${CONTAINER_NAME}$"; then
-  echo "[+] Guardando imagen de respaldo ($BACKUP_IMAGE)..."
   docker commit "$CONTAINER_NAME" "$BACKUP_IMAGE" > /dev/null || true
-  echo "[+] Deteniendo y eliminando contenedor previo..."
   docker stop "$CONTAINER_NAME" || true
   docker rm "$CONTAINER_NAME" || true
 fi
 
-echo "[+] Levantando nuevo contenedor $CONTAINER_NAME..."
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
+  --log-driver json-file \
+  --log-opt max-size=10m \
+  --log-opt max-file=3 \
   -p "${PORT}:80" \
   -p "${WS_PORT}:3000" \
   "$IMAGE_TAG"
 
-echo "✅ Despliegue en [$ENV] completado."
+echo "✅ Despliegue en [$ENV] completado con rotación de logs activa."
